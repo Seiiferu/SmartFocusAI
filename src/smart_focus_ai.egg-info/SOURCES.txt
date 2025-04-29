@@ -1,0 +1,17 @@
+README.md
+setup.py
+src/detection/__init__.py
+src/detection/audio_activity.py
+src/detection/object_detector.py
+src/gaze/__init__.py
+src/gaze/blink_detector.py
+src/gaze/face_mesh.py
+src/gaze/gaze_estimator.py
+src/smart_focus_ai.egg-info/PKG-INFO
+src/smart_focus_ai.egg-info/SOURCES.txt
+src/smart_focus_ai.egg-info/dependency_links.txt
+src/smart_focus_ai.egg-info/top_level.txt
+src/ui/__init__.py
+src/ui/overlay.py
+tests/test_blink.py
+tests/test_face_mesh.py
