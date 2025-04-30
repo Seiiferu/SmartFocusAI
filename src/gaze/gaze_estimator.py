@@ -52,19 +52,6 @@ class GazeEstimator:
         # 4) Smoothing
         self._hist = self._hist * self.momentum + raw * (1.0 - self.momentum)
 
-        # debug console & visual
-        print(f"[DEBUG axis={self.axis}] raw={raw:.2f} hist={self._hist:.2f}")
-        cv2.putText(
-            frame,
-            f"r={raw:.2f} h={self._hist:.2f}",
-            (10, frame.shape[0] - 20),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            0.5,
-            (0, 0, 255),
-            1,
-            cv2.LINE_AA
-        )
-
         # 5) Classification
         candidates = [d for d, (mn, mx) in self.calibration_ranges.items()
                       if mn <= self._hist <= mx]

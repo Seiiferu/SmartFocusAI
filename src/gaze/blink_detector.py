@@ -4,7 +4,8 @@ import numpy as np
 
 class BlinkDetector:
     # indices Mediapipe pour l’œil gauche (similaire pour droit si besoin)
-    LEFT_EYE_IDX = [33, 160, 158, 133, 153, 144]  
+    LEFT_EYE_IDX = [33, 160, 158, 133, 153, 144] 
+    RIGHT_EYE_IDX = [263, 387, 385, 362, 380, 373]
     EAR_THRESH = 0.2     # à ajuster par rapport à tes tests
     CONSEC_FRAMES = 2    # nombre de frames consécutives où l'oeil doit être fermé
                         

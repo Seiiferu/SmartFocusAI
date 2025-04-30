@@ -35,6 +35,7 @@
 * **pytest** → .
 * **streamlit-webrtc** → .
 * **streamlit** (optional) → For creating an interactive website.
+* **pyobjc-framework-AVFoundation** (optional) → Force macOS à afficher la popup Caméra pour ce binaire.
 
 To install Py, run :
 ```bash
@@ -43,7 +44,7 @@ brew install python@3.10
 
 To install all these independencies, run :
 ```bash
-pip install opencv-python mediapipe numpy ultralytics torch torchvision scikit-learn pandas matplotlib imutils onnxruntime pynput pytest streamlit streamlit-webrtc
+pip install opencv-python mediapipe numpy ultralytics torch torchvision scikit-learn pandas matplotlib imutils onnxruntime pynput pytest streamlit streamlit-webrtc pyobjc-framework-AVFoundation
 ```
 
 ## Usage
