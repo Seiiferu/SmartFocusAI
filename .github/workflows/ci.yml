@@ -1,7 +1,7 @@
 name: SmartFocusAI Pipeline
 
 on:
-  push:    {}
+  push:       {}
   pull_request: {}
 
 jobs:
@@ -9,36 +9,29 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1) Checkout du code
       - uses: actions/checkout@v3
 
-      # 2) Setup Python 3.10
       - uses: actions/setup-python@v4
         with:
           python-version: '3.10'
 
-      # 3) Install dependencies (y compris pytest-cov)
       - name: Install dependencies
         run: |
           pip install --upgrade pip
           pip install -r requirements.txt
           pip install pytest pytest-cov
 
-      # 4) Lance les tests et génère le rapport coverage.xml
       - name: Run tests & collect coverage
         run: |
-          pytest --cov=src --cov-report=xml  # génère coverage.xml par défaut
+          pytest --cov=src --cov-report=xml
 
-      # ─────────── NOUVELLE ÉTAPE #5 ───────────
-      # 5) Envoie coverage.xml vers Codecov
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v5
         with:
+          token: ${{ secrets.CODECOV_TOKEN }}
           files: coverage.xml
-          # tu peux scinder tes rapports par flag si tu veux :
-          # flags: unittests,integration
           fail_ci_if_error: true
+        
 
-      # 6) (optionnel) Affiche un résumé de couverture dans la sortie
-      - name: Show coverage report
-        run: |
+      - name: Show coverage summary
+        run: codecov --validate
