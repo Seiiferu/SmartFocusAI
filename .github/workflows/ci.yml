@@ -1,38 +1,53 @@
+# .github/workflows/ci.yml
+
 name: SmartFocusAI Pipeline
 
-# Déclenche le workflow à chaque push et PR sur n'importe quelle branche
+# Déclenche le workflow à chaque push et PR
 on:
   push:    {}
   pull_request: {}
 
 jobs:
-  test:
-    # machine virtuelle Ubuntu
+  test-and-coverage:
     runs-on: ubuntu-latest
 
     steps:
-      # 1) Récupère le code
+      # 1) Checkout du code
       - uses: actions/checkout@v3
 
-      # 2) Installe Python 3.10
-      - uses: actions/setup-python@v4
+      # 2) Setup Python 3.10
+      - name: Setup Python
+        uses: actions/setup-python@v4
         with:
           python-version: '3.10'
 
-      # 3) Installe tes dépendances
+      # 3) Installation des dépendances
       - name: Install dependencies
         run: |
-          pip install --upgrade pip
+          python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install pytest
+          pip install pytest pytest-cov codecov
 
-      # 4) Lance les tests unitaires
-      - name: Unit tests
+      # 4) Tests unitaires
+      - name: Run unit tests
         run: |
-          pytest tests/unit -v
+          pytest tests/unit -v --cov=src --cov-append --cov-report=term-missing
 
-      # 5) Lance les tests d'intégration
-      - name: Integration tests
+      # 5) Tests d’intégration
+      - name: Run integration tests
         run: |
-          pytest -m integration -v
+          pytest -m integration -v --cov=src --cov-append --cov-report=term-missing
 
+      # 6) Publication de la couverture sur Codecov
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./coverage.xml
+          flags: unittests,integration
+          fail_ci_if_error: true
+
+      # 7) (Optionnel) Affichage du rapport en CI
+      - name: Show coverage report
+        run: |
+          pytest --maxfail=1 --disable-warnings -q --cov=src --cov-report=xml
+          cat coverage.xml
