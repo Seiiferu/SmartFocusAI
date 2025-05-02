@@ -1,92 +1,153 @@
-# Smart Focus AI Project
+# 🎯 Smart Focus AI
 
-## Introduction
+[![CI](https://github.com/<votre-orga>/smart_focus_ai/actions/workflows/ci.yml/badge.svg)](https://github.com/<votre-orga>/smart_focus_ai/actions)  
+[![Coverage](https://codecov.io/gh/<votre-orga>/smart_focus_ai/branch/main/graph/badge.svg)](https://codecov.io/gh/<votre-orga>/smart_focus_ai)  
+[![PyPI](https://img.shields.io/pypi/v/smart-focus-ai.svg)](https://pypi.org/project/smart-focus-ai)  
+[![Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://share.streamlit.io/<votre-orga>/smart_focus_ai/app.py)
 
+---
 
-## Projet Structure
+## 📖 Table of Contents
 
+1. [Introduction](#-introduction)  
+2. [Architecture](#-architecture)  
+3. [Project Structure](#-project-structure)  
+4. [Libraries](#-libraries)  
+5. [Installation](#-installation)  
+6. [Usage](#-usage)  
+7. [Deployment](#-deployment)  
+8. [Tests & CI](#-tests--ci)  
+9. [Contributing](#-contributing)  
+10. [License](#-license)
+
+---
+
+## 🧐 Introduction
+
+**Smart Focus AI** est une application Python qui utilise votre webcam pour détecter en temps réel si vous êtes **focalisé·e** ou **distrait·e**, en combinant :
+
+- la direction du regard (gaze) via MediaPipe FaceMesh  
+- la détection de frappe clavier (TypingActivityDetector)  
+- le comptage de clignements d’yeux (BlinkDetector)  
+
+À la fin de chaque session, elle génère un rapport **CSV** et un résumé **PDF** de vos périodes de focus, typing et distraction.
+
+---
+
+## 🚧 Architecture
+
+Voici un diagramme Mermaid qui présente les composants principaux et leurs interactions :
+
+```mermaid
+flowchart LR
+  A[Webcam / OpenCV] --> B[FaceMeshDetector]
+  B --> C[GazeEstimator]
+  B --> D[BlinkDetector]
+  E[TypingActivityDetector] --> F[FocusManager]
+  C --> F
+  D --> F
+  F --> G[Streamlit Transformer]
+  G --> H[Streamlit UI]
+  F --> I[Logger → CSV / PDF]
+
+```
+
+- FaceMeshDetector extrait landmarks faciaux
+- GazeEstimator et BlinkDetector traitent ces landmarks
+- TypingActivityDetector écoute les frappes clavier
+- FocusManager fusionne tous les signaux en un état Focused/Distracted
+- Streamlit Transformer superpose l’overlay sur la vidéo
+- Logger écrit les données et génère le rapport
+
+## 📁 Projet Structure
+
+- **.github**: GitHub Actions workflows (CI, deploy…).
 - **env/**: Virtual env.
+- **logd**: CSV datés générés par session.
 - **notebooks/**: Notebooks for data exploration.
 - **src/**: Main script to run pipeline & Source code (gaze & blink module, objetc & action module, display & overlay, logic).
-- **models/**: extern rss (YOLO, ect.).
-- **tests/**: Tests & Debug tests & Unit tests.
-- **requirements.txt**: List of dependencies.
-- **setup.py**: Packaging configuration script.
+- **tests/**: Tests & Debug tests & Units/Integrations tests.
+- **requirements.txt**: Dependencies pip.
+- **setup.py**: Packaging setuptools.
 - **.gitignore**: Ignore venv, __pycache__, etc.
 <!-- - **streamlit.py**: Streamlit application for interactive display. -->
 
+---
 
-## Libraries
+## 📦 Libraries
 
 * **mediapipe** → FaceMesh & iris.
 * **numpy** → For mathematical operations and numerical array processing.
-* **matplotlib** → For creating classic visualizations (charts, scatter plots, etc.).
-* **ultralytics** → YOLOv8 for object detection.
-* **torch & torchvision** → PyTorch motor (for ultralytics).
+* **matplotlib** → For creating classic visualizations (charts, scatter plots, etc.) for PDF.
 * **scikit-learn** → ML classifier.
 * **pandas** → Logs, analysis, graph.
 * **jupyterlab** → For developping and testing your analysis interactively in notebooks.
 * **imutils** → OpenCV utilitaires.
 * **pytestd** → For unit tests.
-* **onnxruntime** → YOLO.
 * **pynput** → Keyboard/Typing captation(≥ Py 3.10).
 <!-- * **fpdf** → For generating PDF reports. -->
 * **opencv-python** → Captur & video treatment.
-* **pytest** → .
-* **streamlit-webrtc** → .
+* **pytest** → Units tests.
+* **streamlit-webrtc** → WebRTC interface.
 * **streamlit** (optional) → For creating an interactive website.
-* **pyobjc-framework-AVFoundation** (optional) → Force macOS à afficher la popup Caméra pour ce binaire.
+* **pyobjc-framework-AVFoundation** (optional) → popup for MacOS camera persmission.
 
-To install Py, run :
+---
+
+## ⚙️ Installation
+
+1. To clone the repo, run :
 ```bash
-brew install python@3.10
+git clone https://github.com/Seiiferu/SmartFocusAI.git
+cd smart_focus_ai
 ```
 
-To install all these independencies, run :
+2. Create and activate Python 3.10+ environment, run :
 ```bash
-pip install opencv-python mediapipe numpy ultralytics torch torchvision scikit-learn pandas matplotlib imutils onnxruntime pynput pytest streamlit streamlit-webrtc pyobjc-framework-AVFoundation
+python3.10 -m venv env
+source env/bin/activate
 ```
 
-## Usage
-<!-- Run to complete the pipeline and generate the visualizations :  -->
-
-1. Install the idependencies :
+3. Install the idependencies :
 ```bash
    pip install -r requirements.txt
 ```
-2. Run the main script :
-```bash
-    python main.py
-```
 
-3. Run the Streamlit application :
-```bash
-   streamlit run src/streamlit_app.py
-```
-
-## Features
-
-- Generation or loading of a simulated dataset.
-- Data preparation and cleaning (feature engineering, normalization).
-- Anomaly detection using Isolation Forest (and potentially other algorithms).
-- Static visualizations with Matplotlib / Seaborn.
-- Interactive visualizations with Plotly.
-- An interactive dashboard with Streamlit.
-- Generation of a detailed PDF report.
-
-
-## Tests
-
-Unit tests are located in the `tests/` folder. To run them, execute : :
-```bash
-python -m unittest discover tests
-```
-
-## Setup
-
+4. Install editable mode :
 From the root project, instal the package in development mode by running :
 ```bash
 pip install -e 
 ```
 
-Copyright (c) [2025] GeeksterLab
+## 🚀 Usage
+<!-- Run to complete the pipeline and generate the visualizations :  -->
+
+1. Run the main script :
+```bash
+    python main.py
+```
+
+2. Web inteface (Streamlit) :
+```bash
+   streamlit run src/streamlit_app.py
+```
+
+---
+
+## ☁️ Deployment
+
+
+
+---
+
+## ✅  Tests & CI
+
+In local, execute : :
+```bash
+pytest --cov=src --cov-report=term-missing
+```
+
+---
+
+
+MIT © 2025 [GeeksterLab]
