@@ -1,3 +1,5 @@
+#.github/workflows/ci.yml
+
 name: SmartFocusAI Pipeline
 
 on:
