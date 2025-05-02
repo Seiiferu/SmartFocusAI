@@ -1,7 +1,7 @@
 # 🎯 Smart Focus AI
 
 [![CI](https://github.com/<Seiiferu/SmartFocusAI/actions/workflows/ci.yml/badge.svg)](https://github.com/Seiiferu/SmartFocusAI/actions)  
-[![Coverage](https://codecov.io/gh/Seiiferu/SmartFocusAI/branch/main/graph/badge.svg)](https://codecov.io/gh/Seiiferu/SmartFocusAI)  
+[![codecov](https://codecov.io/gh/Seiiferu/SmartFocusAI/graph/badge.svg?token=FCA84XJMP7)](https://codecov.io/gh/Seiiferu/SmartFocusAI)  
 [![PyPI](https://img.shields.io/pypi/v/SmartFocusAI.svg)](https://pypi.org/project/SmartFocusAI)  
 [![Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://share.streamlit.io/Seiiferu/SmartFocusAI/app.py)
 
