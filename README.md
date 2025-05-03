@@ -142,12 +142,14 @@ pip install -e
 
 ## ✅  Tests & CI
 
-In local, execute : :
+Show report, execute : :
 ```bash
-pytest --cov=src --cov-report=term-missing
+pytest --cov=smart_focus_ai --cov-report=term-missing --cov-report=xml
 ```
 
 ---
 
 
 MIT © 2025 [GeeksterLab]
+
+pytest --cov=smart_focus_ai --cov-report=xml

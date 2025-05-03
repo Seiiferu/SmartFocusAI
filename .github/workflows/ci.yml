@@ -28,7 +28,7 @@ jobs:
 
       - name: Run tests & collect coverage
         run: |
-          pytest --cov=smart_focus_ai --cov-report=xml
+          pytest --cov=smart_focus_ai --cov-report=term-missing --cov-report=xml
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v5
