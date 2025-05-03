@@ -1,38 +1,48 @@
-# # tests/integration/test_full_flow.py
+# tests/integration/test_full_flow.py
 
+import os
 import cv2
 import pytest
-from src.logic.focus_manager import FocusManager
+
 from tests.integration.helpers import OfflineTypingDetector, OfflineGazeDetector
+from src.logic.focus_manager import FocusManager
 
-@pytest.mark.integration
-@pytest.mark.parametrize("fixture,expected", [
-    # Sur only_typing.mp4 : on tape → toujours Focused
-    ("only_typing.mp4",      ["Focused"] * 150),
-    # Sur only_gaze_center.mp4 : pas de frappe, mais regard centré → toujours Focused
-    ("only_gaze_center.mp4", ["Focused"] * 150),
-    # Sur gaze_away.mp4 : ni frappe ni regard centré → toujours Distracted
-    ("gaze_away.mp4",        ["Distracted"] * 150),
-])
-def test_full_flow(fixture, expected):
-    path = f"tests/integration/fixtures/{fixture}"
-    cap = cv2.VideoCapture(path)
-    assert cap.isOpened(), f"Impossible d'ouvrir {path}"
+FIXTURE_DIR = os.path.join(os.path.dirname(__file__), "fixtures")
+WARMUP_CALLS = 11  # window_size 10 → 11 appels pour sortir du warm-up
 
-    # Stubs pour typing/gaze
-    typing = OfflineTypingDetector(fixture)
-    gaze   = OfflineGazeDetector(thresh=0.35)
-    mgr    = FocusManager(typing_detector=typing,
-                          gaze_detector=gaze)
+@pytest.mark.parametrize(
+    "fixture_name, typing_flag, expected_focus",
+    [
+        # Typing override (toujours True, même avec image)
+        (None,         True,  True),
+        ("center.jpg", True,  True),
+        ("left.jpg",   True,  True),
+        ("right.jpg",  True,  True),
 
-    results = []
-    while True:
-        ret, frame = cap.read()
-        if not ret:
-            break
-        # note : GazeEstimator attend une frame BGR numpy
-        focused = mgr.is_focused(frame)
-        results.append("Focused" if focused else "Distracted")
+        # Pas de frappe → on regarde le gaze
+        ("center.jpg", False, True),   # regard centré → Focused
+        ("left.jpg",   False, False),  # regard à gauche → Distracted
+        ("right.jpg",  False, False),  # regard à droite → Distracted
+    ]
+)
+def test_full_flow(fixture_name, typing_flag, expected_focus):
+    # Création des détecteurs
+    typing_detector = OfflineTypingDetector("typing" if typing_flag else "no_typing")
+    gaze_detector   = OfflineGazeDetector(fixture_name)
+    fm = FocusManager(typing_detector, gaze_detector)
 
-    cap.release()
-    assert results == expected
+    # Préparer le frame (None en cas de typing-only)
+    if fixture_name is None:
+        frame = None
+    else:
+        path = os.path.join(FIXTURE_DIR, fixture_name)
+        assert os.path.exists(path), f"Fichier introuvable : {path}"
+        frame = cv2.imread(path)
+        assert frame is not None, f"Impossible de lire l'image : {path}"
+
+    # Mini warm-up (window_size = 10)
+    for _ in range(WARMUP_CALLS):
+        fm.is_focused(frame)
+
+    # Vérification finale
+    assert fm.is_focused(frame) is expected_focus

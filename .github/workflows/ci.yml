@@ -1,3 +1,5 @@
+# .github/workflows/ci.yml
+
 name: SmartFocusAI Pipeline
 
 on:
@@ -7,6 +9,8 @@ on:
 jobs:
   test-and-coverage:
     runs-on: ubuntu-latest
+    env:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
     steps:
       - uses: actions/checkout@v3
@@ -20,6 +24,7 @@ jobs:
           pip install --upgrade pip
           pip install -r requirements.txt
           pip install pytest pytest-cov
+          pip install -e .
 
       - name: Run tests & collect coverage
         run: |
@@ -28,10 +33,10 @@ jobs:
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v5
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+          token: ${{ env.CODECOV_TOKEN }}
           files: coverage.xml
           fail_ci_if_error: true
-        
+      
 
       - name: Show coverage summary
         run: codecov --validate
