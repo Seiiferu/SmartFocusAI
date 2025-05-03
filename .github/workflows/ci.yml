@@ -55,7 +55,8 @@ jobs:
 
       - name: Install Xvfb
         run: |
-          sudo apt-get update && sudo apt-get install -y xvfb
+          sudo apt-get update
+          sudo apt-get install -y xvfb
 
       - name: Install dependencies
         run: |
@@ -66,7 +67,10 @@ jobs:
 
       - name: Run tests & collect coverage
         run: |
-          pytest --cov=smart_focus_ai --cov-report=term-missing --cov-report=xml
+          xvfb-run -a pytest \
+          --cov=smart_focus_ai \
+          --cov-report=term-missing \
+          --cov-report=xml \
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
