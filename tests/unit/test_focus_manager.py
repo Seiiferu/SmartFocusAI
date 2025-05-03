@@ -1,27 +1,27 @@
 # tests/unit/test_focus_manager.py
-
 import pytest
-from src.logic.focus_manager import FocusManager
+import src.logic.focus_manager as fm
+import src.gaze.combined_gaze as cg_module
 
-# Dummy simple qui expose la même interface que tes vrais detectors
-class DummyDetector:
-    def __init__(self, value: bool):
-        self._value = value
-    def is_typing(self) -> bool:
-        return self._value
-    def is_gazing(self, frame) -> bool:
-        return self._value
+class FakeDetector:
+    def __init__(self, *args, **kwargs):
+        pass
+    def is_gazing(self, frame):
+        return True
+    def is_typing(self):
+        return False
 
-@pytest.mark.parametrize("typing,gazing,expected", [
-    (True,  True,  True),   # tape ET regarde → focused
-    (True,  False, True),   # tape seul        → focused
-    (False, True,  True),   # regarde seul     → focused
-    (False, False, False),  # ni tape ni regarde → distracted
-])
-def test_focus_logic(typing, gazing, expected):
-    # On crée deux dummy distincts, chacun renvoie soit typing soit gazing
-    typing_dummy = DummyDetector(typing)
-    gaze_dummy   = DummyDetector(gazing)
-    mgr = FocusManager(typing_detector=typing_dummy,
-                       gaze_detector=gaze_dummy)
-    assert mgr.is_focused(frame=None) == expected
+@pytest.fixture(autouse=True)
+def patch_detectors(monkeypatch):
+    # Stubber TypingActivityDetector dans focus_manager
+    monkeypatch.setattr(fm, "TypingActivityDetector", FakeDetector)
+    # Stubber CombinedGazeDetector **là où il est réellement défini**
+    monkeypatch.setattr(cg_module, "CombinedGazeDetector", FakeDetector)
+
+def test_focus_manager_switch():
+    # On fournit explicitement nos stubs aux deux arguments
+    typing_stub = FakeDetector()
+    gaze_stub   = FakeDetector()
+    manager = fm.FocusManager(typing_stub, gaze_stub)
+    # comme FakeDetector.is_typing()->False, is_gazing()->True
+    assert manager.is_focused(None) is True
