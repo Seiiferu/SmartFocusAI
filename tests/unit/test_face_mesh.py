@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+from src.gaze.face_mesh import FaceMeshDetector
 
 # fixture qui simule MediaPipe face_mesh
 class DummyFaceMesh:
@@ -18,7 +19,15 @@ def patch_mediapipe(monkeypatch):
     monkeypatch.setattr(fm, "mp", mp)
 
 def test_process_returns_none_if_empty():
-    from src.gaze.face_mesh import FaceMeshDetector
     detector = FaceMeshDetector()
     result = detector.process(np.zeros((100,100,3), dtype=np.uint8))
     assert result is None
+
+
+def test_face_mesh_detects_landmarks(monkeypatch):
+    # Simule un résultat MediaPipe avec un seul visage
+    class Dummy:
+        multi_face_landmarks = [object()]
+    fake_mp = type("M", (), {
+        "solutions": type("S", (), {"face_mesh": type("FM", (), {"FaceMesh": lambda *a,**k: DummyFM()})})
+    })
