@@ -1,7 +1,7 @@
 # 🎯 Smart Focus AI
 
-[![SmartFocusAI Pipeline](https://github.com/Seiiferu/SmartFocusAI/actions/workflows/ci.yml/badge.svg)](https://github.com/Seiiferu/SmartFocusAI/actions/workflows/ci.yml)  
-[![codecov](https://codecov.io/gh/Seiiferu/SmartFocusAI/graph/badge.svg?token=FCA84XJMP7)](https://codecov.io/gh/Seiiferu/SmartFocusAI)
+[![SmartFocusAI Pipeline](https://github.com/Seiiferu/SmartFocusAI/actions/workflows/ci.yml/badge.svg)](https://github.com/Seiiferu/SmartFocusAI/actions)
+[![codecov](https://codecov.io/gh/Seiiferu/SmartFocusAI/branch/main/graph/badge.svg)](https://codecov.io/gh/Seiiferu/SmartFocusAI)
 [![PyPI](https://img.shields.io/pypi/v/smart-focus-ai.svg)](https://pypi.org/project/smart-focus-ai)  
 [![Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://share.streamlit.io/Seiiferu/SmartFocusAI/app.py)
 
@@ -15,10 +15,8 @@
 4. [Libraries](#-libraries)  
 5. [Installation](#-installation)  
 6. [Usage](#-usage)  
-7. [Deployment](#-deployment)  
-8. [Tests & CI](#-tests--ci)  
-9. [Contributing](#-contributing)  
-10. [License](#-license)
+7. [Tests & CI](#-tests--ci)  
+8. [License](#-license)
 
 ---
 
@@ -62,34 +60,31 @@ flowchart LR
 ## 📁 Projet Structure
 
 - **.github**: GitHub Actions workflows (CI, deploy…).
-- **env/**: Virtual env.
-- **logd**: CSV datés générés par session.
-- **notebooks/**: Notebooks for data exploration.
-- **src/**: Main script to run pipeline & Source code (gaze & blink module, objetc & action module, display & overlay, logic).
-- **tests/**: Tests & Debug tests & Units/Integrations tests.
+- **logs**: logs CSV & PDF reports.
+- **notebooks/**: Exploration & prototypage.
+- **src/**: Source code (gaze, blink, typing, focus).
+- **tests/**: unit & integration tests
 - **requirements.txt**: Dependencies pip.
 - **setup.py**: Packaging setuptools.
-- **.gitignore**: Ignore venv, __pycache__/, etc.
-- **streamlit.py**: Streamlit application for interactive display.
+- **streamlit.py**: Streamlit interface.
 
 ---
 
 ## 📦 Libraries
 
-* **mediapipe** → FaceMesh & iris.
+* **mediapipe** → FaceMesh & iris tracking.
 * **numpy** → For mathematical operations and numerical array processing.
-* **matplotlib** → For creating classic visualizations (charts, scatter plots, etc.) for PDF.
-* **scikit-learn** → ML classifier.
-* **pandas** → Logs, analysis, graph.
+* **matplotlib** → For creating classic visualizations (charts, scatter plots, etc.) for PDF reports.
+* **scikit-learn** → Machine-learning models.
+* **pandas** → Log management & data analysis.
 * **jupyterlab** → For developping and testing your analysis interactively in notebooks.
 * **imutils** → OpenCV utilitaires.
 * **pytestd** → For unit tests.
-* **pynput** → Keyboard/Typing captation(≥ Py 3.10).
-* **fpdf** → For generating PDF reports.
-* **opencv-python** → Captur & video treatment.
-* **pytest** → Units tests.
-* **streamlit-webrtc** → WebRTC interface.
-* **streamlit** (optional) → For creating an interactive website.
+* **pynput** → Keyboard activity detection.
+* **fpdf** →  PDF report creation.
+* **opencv-python** → Captur & video processing.
+* **pytest** → Unit, integration testing & coverage.
+* **streamlit / streamlit-webrtc** (optional) → Real-time web interface.
 * **pyobjc-framework-AVFoundation** (optional) → popup for MacOS camera persmission.
 
 ---
@@ -131,12 +126,6 @@ pip install -e
 ```bash
    streamlit run src/streamlit_app.py
 ```
-
----
-
-## ☁️ Deployment
-
-
 
 ---
 
