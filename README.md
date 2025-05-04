@@ -69,8 +69,8 @@ flowchart LR
 - **tests/**: Tests & Debug tests & Units/Integrations tests.
 - **requirements.txt**: Dependencies pip.
 - **setup.py**: Packaging setuptools.
-- **.gitignore**: Ignore venv, __pycache__, etc.
-<!-- - **streamlit.py**: Streamlit application for interactive display. -->
+- **.gitignore**: Ignore venv, __pycache__/, etc.
+- **streamlit.py**: Streamlit application for interactive display.
 
 ---
 
@@ -85,7 +85,7 @@ flowchart LR
 * **imutils** → OpenCV utilitaires.
 * **pytestd** → For unit tests.
 * **pynput** → Keyboard/Typing captation(≥ Py 3.10).
-<!-- * **fpdf** → For generating PDF reports. -->
+* **fpdf** → For generating PDF reports.
 * **opencv-python** → Captur & video treatment.
 * **pytest** → Units tests.
 * **streamlit-webrtc** → WebRTC interface.
@@ -151,5 +151,3 @@ pytest --cov=smart_focus_ai --cov-report=term-missing --cov-report=xml
 
 
 MIT © 2025 [GeeksterLab]
-
-pytest --cov=smart_focus_ai --cov-report=xml

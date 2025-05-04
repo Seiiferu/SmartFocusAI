@@ -1,33 +1,97 @@
+# tests/unit/test_face_mesh.py
+
 import numpy as np
 import pytest
-from src.gaze.face_mesh import FaceMeshDetector
+import cv2
 
-# fixture qui simule MediaPipe face_mesh
-class DummyFaceMesh:
-    def __init__(self, **kwargs): pass
-    def process(self, rgb):
+from src.gaze.face_mesh import FaceMeshDetector
+import src.gaze.face_mesh as fm_module
+
+
+# 1) Stub global de cv2.cvtColor pour éviter les erreurs de dtype
+@pytest.fixture(autouse=True)
+def stub_cvtcolor(monkeypatch):
+    monkeypatch.setattr(cv2, "cvtColor", lambda img, flag: img.astype(np.uint8))
+
+# 2) Stub par défaut de MediaPipe FaceMesh (aucun visage)
+class DummyFM:
+    def __init__(self, **kw): pass
+    def process(self, frame):
         class R: multi_face_landmarks = []
         return R()
 
+
 @pytest.fixture(autouse=True)
 def patch_mediapipe(monkeypatch):
-    import src.gaze.face_mesh as fm
-    # on crée un objet solutions.face_mesh
-    fake_mod = type("M", (), {})()
-    fake_mod.FaceMesh = DummyFaceMesh
-    mp = type("MP", (), {"solutions": type("S", (), {"face_mesh": fake_mod})})()
-    monkeypatch.setattr(fm, "mp", mp)
+    fake = type("M", (), {
+        "solutions": type("S", (), {
+            "face_mesh": type("FMMod", (), {
+                "FaceMesh": lambda *a, **k: DummyFM()
+            })
+        })
+    })()
+    monkeypatch.setattr(fm_module, "mp", fake)
 
-def test_process_returns_none_if_empty():
-    detector = FaceMeshDetector()
-    result = detector.process(np.zeros((100,100,3), dtype=np.uint8))
-    assert result is None
+def test_process_no_face():
+    det = FaceMeshDetector()
+    assert det.process(np.zeros((10,10,3))) is None
+
+def test_process_with_face(monkeypatch):
+    lm = object()
+    class DummyFM2:
+        def __init__(self, **kw): pass
+        def process(self, frame):
+            class R: multi_face_landmarks = [lm]
+            return R()
+    # on patch juste FaceMesh pour ce test
+    fake2 = type("M2", (), {
+        "solutions": type("S2", (), {
+            "face_mesh": type("FMMod2", (), {
+                "FaceMesh": lambda *a, **k: DummyFM2()
+            })
+        })
+    })()
+    monkeypatch.setattr(fm_module, "mp", fake2)
+
+    det = FaceMeshDetector()
+    res = det.process(np.zeros((10,10,3), dtype=np.uint8))
+    assert res is lm
 
 
-def test_face_mesh_detects_landmarks(monkeypatch):
-    # Simule un résultat MediaPipe avec un seul visage
-    class Dummy:
-        multi_face_landmarks = [object()]
-    fake_mp = type("M", (), {
-        "solutions": type("S", (), {"face_mesh": type("FM", (), {"FaceMesh": lambda *a,**k: DummyFM()})})
-    })
+def test_process_multiple_faces(monkeypatch):
+
+    # 1) Stub qui renvoie deux visages
+    class DummyFM3:
+        def __init__(self, **kw): pass
+        def process(self, frame):
+            # On prépare deux "visages"
+            class Face:
+                landmark = [type("P", (), {"x":0.5,"y":0.5})() for _ in range(5)]
+            class R:
+                multi_face_landmarks = [Face(), Face()]
+            return R()   # retour d'une instance R()
+
+    # 2) Monkeypatch du module
+    fake3 = type("M3", (), {
+        "solutions": type("S3", (), {
+            "face_mesh": type("FMMod3", (), {
+                "FaceMesh": lambda *a, **k: DummyFM3()
+            })
+        })
+    })()
+    monkeypatch.setattr(fm_module, "mp", fake3)
+
+    # 3) Exécution
+    det = FaceMeshDetector()
+    res = det.process(np.zeros((10,10,3), dtype=np.uint8))
+
+    # 4) Assert : on récupère bien le premier visage
+    assert hasattr(res, "landmark")
+
+def test_landmark_to_pixel_exact():
+    frame = np.zeros((100, 200, 3), dtype=np.uint8)
+    # fake landmark with normalized coords
+    class LM: x=0.25; y=0.5
+    px, py = FaceMeshDetector.landmark_to_pixel(frame, LM)
+    # x * width = 0.25*200 =50, y*height=0.5*100=50
+    assert (px, py) == (50, 50)

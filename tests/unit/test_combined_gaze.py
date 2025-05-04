@@ -1,55 +1,57 @@
-#tests/unit/test_combined_gaze.py
+# tests/unit/test_combined_gaze.py
 
-from src.gaze.combined_gaze import CombinedGazeDetector
+import pytest
 import src.gaze.combined_gaze as cg
+from src.gaze.combined_gaze import CombinedGazeDetector
+
 
 class DummyFM:
-    def process(self, frame): return ["any"]
+    def process(self, frame):
+        # Retourne un fake landmarks non-None
+        return object()
+    
+# GazeEstimator factice pour renvoyer "Center"
+class FakeGE:
+    def __init__(self, *a, **k): pass
+    def estimate(self, frame, lm): return "Center"
 
-class DummyGE:
-    def __init__(self,*a,**k): pass
-    def estimate(self, f, lm): return "Center"
-
-class DummyDS:
-    def __init__(self,*a,**k): self.current="None"
-    def update(self, d): 
-        self.current = d
-        return d
+# GazeEstimator factice pour renvoyer "Left"
+class FakeGE_Left(FakeGE):
+    def estimate(self, frame, lm): return "Left"
 
 def test_combined_gaze_gazing(monkeypatch):
-    import src.gaze.combined_gaze as cg
-    monkeypatch.setattr(cg, "FaceMeshDetector", lambda *a,**k: DummyFM())
-    monkeypatch.setattr(cg, "GazeEstimator", lambda *a,**k: DummyGE())
-    monkeypatch.setattr(cg, "DirectionSmoother", lambda *a,**k: DummyDS())
-    
-    # on crée nous-même le DummyFM et on le passe
-    fm = DummyFM()
-    det = cg.CombinedGazeDetector(face_mesh=fm)
+    monkeypatch.setattr(cg, "GazeEstimator", FakeGE)
+    det = CombinedGazeDetector(face_mesh=DummyFM())
     assert det.is_gazing(None) is True
 
-def test_combined_gaze_false_when_not_center(monkeypatch):
-    # Stubber d’un FaceMeshDetector qui renvoie des landmarks quelconques
-    class FM:
-        def process(self, f): 
-            return type("FL", (), {"landmark": [1,2,3,4]})()
-    det = CombinedGazeDetector(face_mesh=FM())
-    # Stubber estimate pour renvoyer autre chose que "Center"
-    monkeypatch.setattr(det, "estimate", lambda frame, lm: "Left")
+def test_combined_gaze_not_center(monkeypatch):
+    monkeypatch.setattr(cg, "GazeEstimator", FakeGE_Left)
+    det = CombinedGazeDetector(face_mesh=DummyFM())
     assert det.is_gazing(None) is False
 
-def test_combined_gaze_false_when_not_center(monkeypatch):
-    # Stub de FaceMeshDetector
-    class FM:
-        def process(self, f): 
-            return type("FL", (), {"landmark": [1,2,3,4]})()
-
-    # FakeGazeEstimator pour forcer un retour != "Center"
-    class FakeGE:
-        def __init__(self, *a, **k): pass
-        def estimate(self, frame, lm): return "Left"
-
-    # On patche la classe GazeEstimator **dans** le module
-    monkeypatch.setattr(cg, "GazeEstimator", FakeGE)
-
-    det = cg.CombinedGazeDetector(face_mesh=FM())
+def test_combined_gaze_process_none():
+    class FMNone:
+        def process(self, frame): return None
+    det = CombinedGazeDetector(face_mesh=FMNone())
     assert det.is_gazing(None) is False
+
+
+def test_combined_gaze_two_axes_switch():
+    # Instanciation standard
+    det = CombinedGazeDetector(face_mesh=DummyFM())
+
+    # On stubbe ge_h et ge_v pour retourner successivement deux valeurs
+    seq_h = iter(["Left", "Center"])
+    seq_v = iter(["None",  "None"])
+    det.ge_h = type("GH", (), {"estimate": lambda self, f, lm: next(seq_h)})()
+    det.ge_v = type("GV", (), {"estimate": lambda self, f, lm: next(seq_v)})()
+
+    # On stubbe les smoothers pour qu'ils renvoient exactement la valeur reçue
+    det.h_smoother = type("SH", (), {"update": lambda self, d: d})()
+    det.v_smoother = type("SV", (), {"update": lambda self, d: d})()
+
+    # 1er appel : ge_h="Left", ge_v="None" → ni l’un ni l’autre "Center" → False
+    assert det.is_gazing(None) is False
+
+    # 2ème appel : ge_h="Center", ge_v="None" → h_smoother="Center" → True
+    assert det.is_gazing(None) is True
