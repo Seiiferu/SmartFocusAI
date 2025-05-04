@@ -38,8 +38,6 @@ iniconfig==2.1.0
 jaraco.classes==3.4.0
 jaraco.context==6.0.1
 jaraco.functools==4.1.0
-jax==0.4.13
-jaxlib==0.4.13
 Jinja2==3.1.6
 joblib==1.4.2
 jsonschema==4.23.0
