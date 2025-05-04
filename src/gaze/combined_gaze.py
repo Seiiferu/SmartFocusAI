@@ -7,13 +7,13 @@ from src.gaze.smoother import DirectionSmoother
 
 class CombinedGazeDetector:
     """
-    Combine deux GazeEstimator (horiz + vert) + smoothing pour
-    déterminer si l’utilisateur regarde le centre de l’écran.
+    Combine two GazeEstimators (horizontal + vertical) + smoothing to
+    determine if the user is looking at the center of the screen.
     """
     def __init__(self, face_mesh: FaceMeshDetector):
         self.fm = face_mesh
 
-        # Plages de calibration horizontale
+        # Horizontal calibration ranges
         cal_h = {
             "Right":  (-0.31, +0.03),
             "Center": (+0.03, +0.17),
@@ -22,7 +22,7 @@ class CombinedGazeDetector:
         self.ge_h = GazeEstimator(calibration_ranges=cal_h,
                                   momentum=0.8, axis=0)
 
-        # Plages de calibration verticale
+        # Vertical calibration ranges
         cal_v = {
             "Up":     (-float("inf"), -0.05),
             "Center": (-0.05, -0.04),
@@ -31,7 +31,7 @@ class CombinedGazeDetector:
         self.ge_v = GazeEstimator(calibration_ranges=cal_v,
                                   momentum=0.8, axis=1)
 
-        # Smoothers
+        # Smoothers for each axis
         self.h_smoother = DirectionSmoother(window_size=5)
         self.v_smoother = DirectionSmoother(window_size=5)
 
@@ -41,10 +41,10 @@ class CombinedGazeDetector:
             return False
 
         # --- estimation & smoothing ---
-        dir_h     = self.ge_h.estimate(frame, lm) or "None"
-        dir_v     = self.ge_v.estimate(frame, lm) or "None"
+        dir_h      = self.ge_h.estimate(frame, lm) or "None"
+        dir_v      = self.ge_v.estimate(frame, lm) or "None"
         smoother_h = self.h_smoother.update(dir_h)
         smoother_v = self.v_smoother.update(dir_v)
 
-        # Focus si l’un des axes est centré
+        # Focus if either axis is centered
         return (smoother_h == "Center") or (smoother_v == "Center")

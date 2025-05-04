@@ -7,7 +7,7 @@ from typing import Tuple, List, Dict, Optional
 
 class FaceMeshDetector:
     """
-    Détecte les landmarks faciaux et les points d’iris via MediaPipe Face Mesh.
+    Detects facial landmarks and iris points using MediaPipe Face Mesh.
     """
     LEFT_IRIS_IDXS  = [474, 475, 476, 477]
     RIGHT_IRIS_IDXS = [469, 470, 471, 472]

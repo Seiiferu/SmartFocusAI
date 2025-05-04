@@ -9,9 +9,7 @@ class DirectionSmoother:
 
     def update(self, new_dir):
         self.window.append(new_dir)
-        # si la nouvelle direction domine la moitié de la fenêtre
+        # if the new direction dominates more than half of the window
         if self.window.count(new_dir) > len(self.window) // 2:
             self.current = new_dir
         return self.current
-
-

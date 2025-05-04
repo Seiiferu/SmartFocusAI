@@ -2,10 +2,10 @@
 
 class OfflineTypingDetector:
     """
-    Stub : on déduit is_typing() du nom de la fixture.
+    Stub: deduce is_typing() from the fixture name.
     """
     def __init__(self, fixture_name: str):
-        # "typing" dans le nom → toujours True
+        # "typing" in the name → always True
         self._typing = (fixture_name == "typing")
 
     def is_typing(self) -> bool:
@@ -14,7 +14,7 @@ class OfflineTypingDetector:
 
 class OfflineGazeDetector:
     """
-    Stub : on renvoie True uniquement si "center" dans le nom de la fixture.
+    Stub: returns True only if "center" is in the fixture name.
     """
     def __init__(self, fixture_name: str):
         self._gazing = fixture_name is not None and "center" in fixture_name

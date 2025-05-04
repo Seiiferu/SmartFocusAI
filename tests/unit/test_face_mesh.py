@@ -8,12 +8,12 @@ from src.gaze.face_mesh import FaceMeshDetector
 import src.gaze.face_mesh as fm_module
 
 
-# 1) Stub global de cv2.cvtColor pour éviter les erreurs de dtype
+# Global stub for cv2.cvtColor to avoid dtype errors
 @pytest.fixture(autouse=True)
 def stub_cvtcolor(monkeypatch):
     monkeypatch.setattr(cv2, "cvtColor", lambda img, flag: img.astype(np.uint8))
 
-# 2) Stub par défaut de MediaPipe FaceMesh (aucun visage)
+# Default stub for MediaPipe FaceMesh (no face detected)
 class DummyFM:
     def __init__(self, **kw): pass
     def process(self, frame):
@@ -43,7 +43,7 @@ def test_process_with_face(monkeypatch):
         def process(self, frame):
             class R: multi_face_landmarks = [lm]
             return R()
-    # on patch juste FaceMesh pour ce test
+    # We just patch FaceMesh for this test
     fake2 = type("M2", (), {
         "solutions": type("S2", (), {
             "face_mesh": type("FMMod2", (), {
@@ -60,18 +60,18 @@ def test_process_with_face(monkeypatch):
 
 def test_process_multiple_faces(monkeypatch):
 
-    # 1) Stub qui renvoie deux visages
+    # Stub process() returns two faces
     class DummyFM3:
         def __init__(self, **kw): pass
         def process(self, frame):
-            # On prépare deux "visages"
+            # we retrieve two fake faces
             class Face:
                 landmark = [type("P", (), {"x":0.5,"y":0.5})() for _ in range(5)]
             class R:
                 multi_face_landmarks = [Face(), Face()]
-            return R()   # retour d'une instance R()
+            return R()   # return instance R()
 
-    # 2) Monkeypatch du module
+    # Monkeypatch module
     fake3 = type("M3", (), {
         "solutions": type("S3", (), {
             "face_mesh": type("FMMod3", (), {
@@ -81,11 +81,11 @@ def test_process_multiple_faces(monkeypatch):
     })()
     monkeypatch.setattr(fm_module, "mp", fake3)
 
-    # 3) Exécution
+    # Run
     det = FaceMeshDetector()
     res = det.process(np.zeros((10,10,3), dtype=np.uint8))
 
-    # 4) Assert : on récupère bien le premier visage
+    # Assert : we well receive the first face
     assert hasattr(res, "landmark")
 
 def test_landmark_to_pixel_exact():

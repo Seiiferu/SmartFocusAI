@@ -5,10 +5,10 @@ from src.gaze.gaze_estimator import GazeEstimator
 
 class FocusManager:
     """
-    Décide si l'utilisateur est Focused ou Distracted selon :
-      1) Si on tape sur le clavier → Focused (override quel que soit le gaze)
-      2) Sinon, si le regard est centré → Focused
-      3) Sinon → Distracted
+    Decides if the user is Focused or Distracted based on:
+      1) If typing on the keyboard → Focused (override regardless of gaze)
+      2) Otherwise, if gaze is centered → Focused
+      3) Otherwise → Distracted
     """
 
     def __init__(self,
@@ -18,17 +18,17 @@ class FocusManager:
         self.gaze   = gaze_detector
 
     def is_focused(self, frame) -> bool:
-        # 1) priorité au clavier
+        # 1) keyboard has priority
         is_typing = self.typing.is_typing()
         if is_typing:
-            # même si le regard est hors-centre, on reste concentré
+            # even if gaze is off-center, we remain focused
             return True
 
-        # 2) si on ne tape pas, on regarde le gaze
+        # 2) if not typing, check gaze
         is_gazing = self.gaze.is_gazing(frame)
         if is_gazing:
-            # regard centré ET pas de frappe → on est concentré
+            # centered gaze AND no typing → focused
             return True
 
-        # 3) ni frappe ni regard centré → distrait
+        # 3) neither typing nor centered gaze → distracted
         return False

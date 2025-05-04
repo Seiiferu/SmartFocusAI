@@ -6,6 +6,7 @@ import av, cv2, pandas as pd, numpy as np, io, time, os
 from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.pyplot as plt
 
+
 from src.detection.typing_activity import TypingActivityDetector
 from src.gaze.face_mesh import FaceMeshDetector
 from src.gaze.blink_detector import BlinkDetector
@@ -16,7 +17,7 @@ from src.logic.focus_manager import FocusManager
 
 st.set_page_config(page_title="Smart Focus AI", layout="wide")
 st.title("🎯 :rainbow[SMART FOCUS AI]")
-st.warning("Don't forget to allow the webcam access in your browser settings.")
+st.warning("Don't forget to allow webcam access in your browser settings.")
 st.markdown("""
     <a href="#live">
         <button style='font-size:16px;padding:10px 20px;margin-top:20px;'>🚀 Try the real-time detection now by clicking START</button>
@@ -38,50 +39,87 @@ st.markdown("""
         transform: scale(1.05);
         box-shadow: 0 6px 20px rgba(0,0,0,0.2);
     }
+
+    footer { visibility: hidden !important; }
+
+    .footer {
+    position: fixed !important;;
+    left: 0 !important;;
+    bottom: 0 !important;;
+    width: 100% !important;;
+    text-align: right !important;;        
+    padding: 8px 16px !important;;       
+    background-color: rgba(255,255,255,0.8) !important;;
+    color: #666 !important;;
+    font-size: 0.8rem !important;;
+    z-index: 9999 !important;;           
+        }
     </style>
 """, unsafe_allow_html=True)
 
-# -- Paramètres de journalisation --
+# -- Logging parameters --
 LOG_DIR = "Logs"
 os.makedirs(LOG_DIR, exist_ok=True)
 today = pd.Timestamp.now().date()
 FILENAME_CSV = os.path.join(LOG_DIR, f"focus_logs_{today}.csv")
 
-# Initialisation du DataFrame en session
+# Initialize the DataFrame in session
 if "df_log" not in st.session_state:
-    st.session_state.df_log = pd.DataFrame(columns=["timestamp","focused","typing","gaze","blink_count"])
+    st.session_state.df_log = pd.DataFrame(columns=["timestamp","focused", "typing","gaze","blink_count"])
 if "recording" not in st.session_state:
     st.session_state.recording = False
 
+
 def make_pdf(df: pd.DataFrame) -> bytes:
+    # 1) Timestamp en datetime
+    if df["timestamp"].dtype != "datetime64[ns]":
+        df["timestamp"] = pd.to_datetime(df["timestamp"], unit="s")
+
+    # 2) Tri et calcul des intervalles dt (en secondes)
+    df = df.sort_values("timestamp")
+    df["dt"] = df["timestamp"].diff().dt.total_seconds().fillna(0)
+
+    # 3) Durées cumulées
+    total_secs      = df["dt"].sum()
+    focus_secs      = df.loc[df.focused == 1, "dt"].sum()
+    distracted_secs = df.loc[df.focused == 0, "dt"].sum()
+    typing_secs     = df.loc[df.typing  == 1, "dt"].sum()
+    gaze_secs       = df.loc[df.gaze    == 1, "dt"].sum()
+    blinks          = int(df["blink_count"].max())
+
+    # 4) Taux time-weighted [%]
+    focus_rate      = (focus_secs      / total_secs * 100) if total_secs else 0
+    distracted_rate = (distracted_secs / total_secs * 100) if total_secs else 0
+    typing_rate     = (typing_secs     / total_secs * 100) if total_secs else 0
+    gaze_rate       = (gaze_secs       / total_secs * 100) if total_secs else 0
+
+    # 5) Génération du PDF
     buf = io.BytesIO()
     with PdfPages(buf) as pdf:
+        # --- Page 1 : résumé des stats ---
         fig, ax = plt.subplots(figsize=(6,4))
-        focused_rate = df["focused"].mean() * 100
-        blinks = df["blink_count"].max()
-        typing_rate = df["typing"].mean() * 100
-        gaze_rate = df["gaze"].mean() * 100
         stats_text = (
-            f"Taux de focus : {focused_rate:.1f}%\n"
-            f"Clignements : {blinks}\n"
-            f"Taux typing : {typing_rate:.1f}%\n"
-            f"Taux gaze   : {gaze_rate:.1f}%"
+            f"Focus rate:      {focus_rate:.1f}%\n"
+            f"Distracted rate: {distracted_rate:.1f}%\n"
+            f"Typing rate:     {typing_rate:.1f}%\n"
+            f"Gaze rate:       {gaze_rate:.1f}%\n"
+            f"Blinks:          {blinks}"
         )
-        ax.text(0.1, 0.5, stats_text, fontsize=14)
+        ax.text(0.1, 0.5, stats_text, fontsize=14, family="monospace")
         ax.axis("off")
         pdf.savefig(fig)
         plt.close(fig)
 
+        # --- Page 2 : évolution dans le temps ---
         fig, ax = plt.subplots(figsize=(8,4))
         df_plot = df.set_index("timestamp")[["focused","typing","gaze"]]
         df_plot.rolling(30).mean().plot(ax=ax)
-        ax.set_ylabel("Moyenne glissante")
-        ax.set_title("Évolution Focus/Typing/Gaze")
+        ax.set_ylabel("Rolling average")
+        ax.set_title("Focus / Typing / Gaze over time")
         pdf.savefig(fig)
         plt.close(fig)
 
     return buf.getvalue()
-
 
 
 
@@ -95,7 +133,7 @@ class FocusTransformer(VideoProcessorBase):
         self.focus_mgr = FocusManager(typing_detector=self.typing, gaze_detector=self.gaze)
         self.h_smoother = DirectionSmoother(window_size=5)
         self.v_smoother = DirectionSmoother(window_size=5)
-        # Durée d’un cycle (affiché + caché) en secondes
+        # Cycle duration (visible + hidden) in seconds
         self.cycle = 1.0  
 
     def recv(self, frame: av.VideoFrame) -> av.VideoFrame:
@@ -121,8 +159,8 @@ class FocusTransformer(VideoProcessorBase):
         cv2.putText(img, f"Typing:{int(is_typing)}  Center Gaze:{int(is_gazing)}  Blink:{self.blink.blink_count}",
                     (10,60), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255,255,255), 1)
         
-        # CV2 ne sachant pas aligner à droite tout seul -->
-        # récupère taille du texte
+        # Since OpenCV can't align text to the right by itself -->
+        # get text size
         (text_w, text_h), baseline = cv2.getTextSize(
             "HELLO STREAMLIT",
             cv2.FONT_HERSHEY_SIMPLEX,
@@ -130,10 +168,10 @@ class FocusTransformer(VideoProcessorBase):
             thickness=2
         )
 
-        # Calcul phase entre 0 et 1
+        # Compute phase between 0 and 1
         phase = (time.time() % self.cycle) / self.cycle
 
-        # Si phase < 0.5 : on affiche, sinon on ne dessine pas → clignote
+        # If phase < 0.5: draw text, otherwise don't → blinking
         if phase < 0.5:
             text = "HELLO STREAMLIT"
             (w, h), _ = cv2.getTextSize(text,
@@ -153,23 +191,23 @@ class FocusTransformer(VideoProcessorBase):
 st.markdown("## 🧠 :rainbow[What is Smart Focus AI]")
 st.markdown("""
 
-**Type** : Application Web interactive  
-**Technos** : Python · Streamlit · OpenCV · MediaPipe · Machine Learning léger
+**Type** : Interactive Web Application   
+**Technologies** : Python · Streamlit · OpenCV · MediaPipe · Light Machine Learning
 
 ---
 
 **Description :**  
-Smart Focus AI est une application web intelligente qui analyse **l’attention** de l’utilisateur en temps réel via la **webcam**. Elle combine plusieurs détecteurs pour évaluer en continu l’état de concentration :
+Smart Focus AI is an intelligent web application that analyzes the user’s **attention** in real time via the **webcam**. It combines several detectors to continuously assess the user’s focus state:
+- ✅ Keyboard typing detection (*typing*)
+- 🎯 Gaze tracking (*center gaze / gaze away*)
+- 👁️ Blink detection (*blinks*)
+- 🔄 Signal fusion to determine whether the user is **Focused** or **Distracted**
 
-- ✅ Détection de frappe au clavier (*typing*)  
-- 🎯 Suivi du regard (*center gaze / gaze away*)  
-- 👁️ Détection des clignements (*blinks*)  
-- 🔄 Fusion des signaux pour déterminer si l’utilisateur est **Focused** ou **Distracted**
+The interface provides:
 
-L’interface fournit :
-- 📽️ Un retour visuel en direct (overlay vidéo)  
-- 📊 Un rapport automatique au format **PDF** et **CSV**  
-- 🎓 Des vidéos explicatives intégrées pour guider l’utilisateur
+- 📽️ Live visual feedback (video overlay) in the **left sidebar**
+- 📊 Automatic reporting in **PDF** and **CSV** formats via the **left sidebar**
+- 🎓 Built-in explanatory videos to guide the user
 """)
 
 st.markdown("## 🎓 :rainbow[How to Use Smart Focus AI]")
@@ -186,7 +224,7 @@ with st.expander("🎓 How does Smart Focus AI work?"):
     """)
 
 st.info("Tutorial : Here are 3 short videos (5s) to help you understand how the system works:")
-st.write(" - 📽️ These videos illustrate the behaviors the system detects (not live recordings).")
+st.write(" - 📽️ These videos illustrate the behaviors the system detects (not live recording).")
 
 st.markdown('<div id="live"></div>', unsafe_allow_html=True)
 
@@ -213,7 +251,7 @@ webrtc_ctx = webrtc_streamer(
     async_processing=True,
 )
 
-# --- Gestion de l'état caméra pour détecter l'arrêt ---
+# --- Managing webcam state to detect stop ---
 if webrtc_ctx:
     prev_state = st.session_state.get("prev_webrtc_state", None)
     current_state = webrtc_ctx.state
@@ -224,7 +262,7 @@ if webrtc_ctx:
 
     st.session_state["prev_webrtc_state"] = current_state
 
-# --- Affichage pendant que la caméra tourne ---
+# --- Display while webcam is running ---
 if webrtc_ctx and webrtc_ctx.state.playing:
     st.markdown("🔴 **Recording in progress...**", unsafe_allow_html=True)
     live_chart = st.empty()
@@ -247,7 +285,7 @@ if webrtc_ctx and webrtc_ctx.state.playing:
             live_chart.info("⏳ Waiting for focus data...")
         time.sleep(0.5)
 
-# --- Affichage après arrêt de la webcam ---
+# --- Display after webcam stops ---
 if st.session_state.get("show_success", False):
     elapsed = time.time() - st.session_state["success_start_time"]
     if elapsed < 10:
@@ -261,7 +299,7 @@ st.sidebar.markdown("<h1 style='text-align: center;'>Home</h1>", unsafe_allow_ht
 
 
 def format_duration(seconds: float) -> str:
-    """Formate une durée en secondes en 'Xh Ym Zs' ou 'Ym Zs'."""
+    """Formats a duration in seconds as 'Xh Ym Zs' or 'Ym Zs'."""
     hours, rem = divmod(int(seconds), 3600)
     mins, secs = divmod(rem, 60)
     if hours:
@@ -269,38 +307,38 @@ def format_duration(seconds: float) -> str:
     return f"{mins}m {secs}s"
 
 if os.path.exists(FILENAME_CSV):
-    with st.spinner("📊 Analyse des données en cours..."):
+    with st.spinner("📊 Analyzing data..."):
         df_today = pd.read_csv(
             FILENAME_CSV,
             header=None,
             names=["timestamp", "focused", "typing", "gaze", "blink_count"]
         )
-    # 1) Conversion du timestamp
+    # 1) Convert timestamp
     df_today["timestamp"] = pd.to_datetime(df_today["timestamp"], unit="s")
-    # 2) Tri chronologique + calcul des écarts (dt)
+    # 2) Sort chronologically + compute intervals (dt)
     df_today = df_today.sort_values("timestamp")
     df_today["dt"] = df_today["timestamp"].diff().dt.total_seconds().fillna(0)
-    # 3) Durée totale
+    # 3) Total duration
     total_secs = (df_today["timestamp"].iloc[-1] - df_today["timestamp"].iloc[0]).total_seconds()
     total_fmt  = format_duration(total_secs)
 
-    # 4) Durées effectives
+    # 4) Effective durations
     focus_secs      = df_today.loc[df_today.focused == 1, "dt"].sum()
     distracted_secs = df_today.loc[df_today.focused == 0, "dt"].sum()
     typing_secs     = df_today.loc[df_today.typing  == 1, "dt"].sum()
 
-    # 5) Taux temporels [%]
+    # 5) Time-based rates [%]
     focus_rate      = focus_secs      / total_secs * 100 if total_secs else 0
     distracted_rate = distracted_secs / total_secs * 100 if total_secs else 0
     typing_rate     = typing_secs     / total_secs * 100 if total_secs else 0
 
-    # 6) Formatage des durées pour l’affichage
+    # 6) Format durations for display
     focus_fmt      = format_duration(focus_secs)
     distracted_fmt = format_duration(distracted_secs)
     typing_fmt     = format_duration(typing_secs)
 
-    # --- Construction de la sidebar ---
-    st.sidebar.header("📊 Report of the day", divider="rainbow")
+    # --- Build sidebar ---
+    st.sidebar.header("📊 Report of the Day", divider="rainbow")
     st.sidebar.markdown(
         "<p style='text-align: center;'>Here is today's summary of your focus analysis.</p>",
         unsafe_allow_html=True
@@ -354,5 +392,10 @@ with st.sidebar.expander("ℹ️ How it works?"):
     - Click **Start** to begin, then **Stop** to generate the report.
     """)
 
+# st.caption("<br>", unsafe_allow_html=True)
+# st.caption("© 2025 GeeksterLab")
 
-# st.write Copyright (c) [2025] GeeksterLab
+st.markdown(
+    '<div class="footer">© 2025 GeeksterLab</div>',
+    unsafe_allow_html=True
+)

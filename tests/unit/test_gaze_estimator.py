@@ -1,6 +1,5 @@
 # tests/unit/test_gaze_estimator.py
 
-
 import numpy as np
 import pytest
 
@@ -12,13 +11,12 @@ class DummyLM:
 
 @pytest.fixture(autouse=True)
 def stub_indices_and_norm(monkeypatch):
-    # Évite les IndexError et la division par zéro
+    # Avoid IndexError and division by zero
     monkeypatch.setattr(BlinkDetector, "LEFT_EYE_IDX",  [0,1,2,3])
     monkeypatch.setattr(BlinkDetector, "RIGHT_EYE_IDX", [0,1,2,3])
-    # monkeypatch.setattr(BlinkDetector, "LEFT_EYE_IDX",  [0,1,2,3,4,5])
-    # monkeypatch.setattr(BlinkDetector, "RIGHT_EYE_IDX", [0,1,2,3,4,5])
     monkeypatch.setattr(GazeEstimator, "LEFT_IRIS_IDXS",  [0,1,2,3])
     monkeypatch.setattr(GazeEstimator, "RIGHT_IRIS_IDXS", [0,1,2,3])
+    # Normalize eye landmark distance to 1
     monkeypatch.setattr(np.linalg, "norm", lambda v: 1.0)
 
 def test_estimate_none_on_no_landmarks():
@@ -71,16 +69,8 @@ def test_no_candidates_returns_none():
     frame = np.zeros((5,5,3))
     assert ge.estimate(frame, FL) is None
 
-# def test_multiple_candidates_closest_center():
-#     # two overlapping ranges, center of B is 0 so B wins
-#     cal = {"A":(-1.0,1.0), "B":(-0.1,0.1)}
-#     ge = GazeEstimator(calibration_ranges=cal, axis=0, momentum=0.0)
-#     class FL: landmark = [DummyLM() for _ in range(4)]
-#     frame = np.zeros((5,5,3))
-#     assert ge.estimate(frame, FL) == "B"
-
 def test_multiple_candidates_closest_center():
-    # two overlapping ranges, both centres à 0 → "A" (première clé) gagne
+    # two overlapping ranges, both centers at 0 -> "A" (first key) wins
     cal = {"A":(-1.0,1.0), "B":(-0.1,0.1)}
     ge = GazeEstimator(calibration_ranges=cal, axis=0, momentum=0.0)
     class FL: landmark = [DummyLM() for _ in range(4)]

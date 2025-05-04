@@ -6,37 +6,37 @@ from pynput import keyboard
 
 class TypingActivityDetector:
     """
-    Détecte l’activité de frappe au clavier en écoutant
-    les événements système via pynput.
+    Detects keyboard typing activity by listening
+    to system events via pynput.
     """
 
     def __init__(self, display_timeout: float = 1.0):
         """
-        :param display_timeout: durée (en s) pendant laquelle
-                                on considère qu'on tape après une touche
+        :param display_timeout: duration (in s) during which
+                                typing is considered after a key press
         """
         self.display_timeout = display_timeout
         self._last_event = 0.0
         self._lock = threading.Lock()
-        # Listener non-bloquant
+        # Non-blocking listener
         self.listener = keyboard.Listener(on_press=self._on_key_press)
 
     def _on_key_press(self, key):
-        """Callback appelé à chaque pression de touche."""
+        """Callback called on every key press."""
         with self._lock:
             self._last_event = time.time()
 
     def start(self):
-        """Lance l'écoute en arrière-plan."""
+        """Starts listening in the background."""
         self.listener.start()
 
     def stop(self):
-        """Arrête l'écoute."""
+        """Stops listening."""
         self.listener.stop()
 
     def is_typing(self) -> bool:
         """
-        True si une touche a été pressée il y a moins de display_timeout secondes.
+        True if a key was pressed less than display_timeout seconds ago.
         """
         with self._lock:
             return (time.time() - self._last_event) < self.display_timeout
