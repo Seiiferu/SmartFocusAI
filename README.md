@@ -3,7 +3,7 @@
 [![SmartFocusAI Pipeline](https://github.com/Seiiferu/SmartFocusAI/actions/workflows/ci.yml/badge.svg)](https://github.com/Seiiferu/SmartFocusAI/actions)
 [![codecov](https://codecov.io/gh/Seiiferu/SmartFocusAI/graph/badge.svg?token=FCA84XJMP7)](https://codecov.io/gh/Seiiferu/SmartFocusAI)
 [![PyPI](https://img.shields.io/pypi/v/smart-focus-ai.svg)](https://pypi.org/project/smart-focus-ai)  
-[![Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://share.streamlit.io/Seiiferu/SmartFocusAI/app.py)
+[![Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://smartfocusai.streamlit.app)
 
 ---
 
@@ -15,6 +15,7 @@
 4. [Libraries](#-libraries)  
 5. [Installation](#-installation)  
 6. [Usage](#-usage)  
+6. [Deployment](#-deployment)  
 7. [Tests & CI](#-tests--ci)  
 8. [License](#-license)
 
@@ -127,6 +128,14 @@ pip install -e
    streamlit run src/streamlit_app.py
 ```
 
+---
+
+## ✅  Deployment
+
+[![codecov](https://codecov.io/gh/Seiiferu/SmartFocusAI/graph/badge.svg?token=FCA84XJMP7)](https://codecov.io/gh/Seiiferu/SmartFocusAI)
+
+**Warning : If you also want to try the typing function you have to install this project in your local beaucouse pynput only works in local not in distant server.
+Thank you for your comprehension.**
 ---
 
 ## ✅  Tests & CI
