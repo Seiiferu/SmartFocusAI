@@ -130,16 +130,20 @@ pip install -e
 
 ---
 
-## ✅  Deployment
+## ☁️  Deployment
+
+- You can try this project on Streamlit instead of installing it locally.
 
 [![Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://smartfocusai.streamlit.app)
 
-**WARNING :**
-**- If you also want to try the typing function you have to install this project in your local beaucouse pynput only works in local not in distant server.**
-**- Thank you for your comprehension.**
+⚠️ **WARNING :**
+
+- **If you also want to try the typing function, you have to install this project locally because `pynput` only works on a local machine, not on a distant server.**
+- **Thank you for your understanding. 🙏**
+
 ---
 
-## ✅  Tests & CI
+## 🧪  Tests & CI
 
 Show report, execute : :
 ```bash
