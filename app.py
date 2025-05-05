@@ -1,9 +1,17 @@
 # app.py
 
-import streamlit as st
 from streamlit_webrtc import webrtc_streamer, VideoProcessorBase, WebRtcMode, WebRtcStreamerState
-import av, cv2, pandas as pd, numpy as np, io, time, os
 from matplotlib.backends.backend_pdf import PdfPages
+
+import av
+import io
+import time
+import os 
+import cv2
+
+import streamlit as st
+import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
 
 
